@@ -1,0 +1,24 @@
+services:
+  realsense-base:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: realsense-pyrealsense2-rpi-base:2.55.1
+    container_name: realsense_base
+
+    # These are ONLY for running/testing with real hardware.
+    # Not needed to build.
+    privileged: true
+    network_mode: host
+    platform: linux/arm64
+
+    volumes:
+      # RealSense camera USB access
+      - /dev/bus/usb:/dev/bus/usb
+       # Serial devices: teensy/nano (ttyACM0, ttyUSB0)
+      - /dev:/dev
+      # Allow udev to detect USB hotplug events
+      - /run/udev:/run/udev:ro
+
+    environment:
+      PYTHONUNBUFFERED: "1"

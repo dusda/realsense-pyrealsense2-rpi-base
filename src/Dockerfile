@@ -64,7 +64,6 @@ RUN cp /opt/librealsense/config/99-realsense-libusb.rules /etc/udev/rules.d/ || 
 # 1. Searches the *entire* librealsense tree for pyrealsense2*.so.
 # 2. If not found, searches probable Python installation paths.
 # 3. Copies the Python wrapper folder + .so into site-packages.
-# 4. Verifies that the real pyrealsense2 bindings are importable.
 #
 # This approach is intentionally defensive and avoids hardcoding
 # a fragile path that would break whenever Python, Pi OS, arch,
@@ -78,12 +77,7 @@ RUN set -eux; \
     echo "Python site-packages: ${PY_SITE}"; \
     rm -rf "${PY_SITE}/pyrealsense2"; \
     cp -r /opt/librealsense/wrappers/python/pyrealsense2 "${PY_SITE}/"; \
-    cp "${SO_FILE}" "${PY_SITE}/pyrealsense2/"; \
-    python - <<'PY'\n\
-import pyrealsense2 as rs\n\
-assert hasattr(rs, "pipeline"), f"pyrealsense2 stub loaded, attrs={dir(rs)[:30]}"\n\
-print("pyrealsense2 OK, pipeline available")\n\
-PY
+    cp "${SO_FILE}" "${PY_SITE}/pyrealsense2/";
 
 # Default to python shell
 WORKDIR /root

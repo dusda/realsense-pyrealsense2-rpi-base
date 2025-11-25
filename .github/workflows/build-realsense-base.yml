@@ -1,12 +1,6 @@
 name: Build and Push realsense-pyrealsense2-rpi-base
 
 on:
-  push:
-    branches: [ main, master ]
-    paths:
-      - "src/Dockerfile"
-      - "src/**"
-      - ".github/workflows/build-realsense-base.yml"
   workflow_dispatch:
 
 env:
@@ -44,7 +38,7 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: |
-            ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}
+            ${{ env.REGISTRY }}/TPham92/${{ env.IMAGE_NAME }}
           tags: |
             type=raw,value=latest
             type=raw,value=${{ env.LIBREALSENSE_VERSION }}

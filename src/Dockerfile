@@ -1,8 +1,10 @@
 # RealSense Python base image for Raspberry Pi (ARM64)
 # Contains librealsense + pyrealsense2 installed into site-packages.
 
-FROM python:3.11-slim-trixie
+FROM python:3.11-slim-trixie AS base
 
+ARG LIBREALSENSE_TAG=v2.55.1
+ENV DEBIAN_FRONTEND=noninteractive
 ENV PIP_BREAK_SYSTEM_PACKAGES=1
 ENV PIP_EXTRA_INDEX_URL=https://www.piwheels.org/simple
 ENV PIP_PREFER_BINARY=1
@@ -17,17 +19,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     udev curl \
   && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /opt
+FROM base AS builder
+WORKDIR /app
 
-ARG LIBREALSENSE_TAG=v2.55.1
-RUN git clone --branch ${LIBREALSENSE_TAG} --depth 1 https://github.com/IntelRealSense/librealsense.git
+RUN git clone https://github.com/IntelRealSense/librealsense.git . \
+  --branch ${LIBREALSENSE_TAG} \
+  --depth 1
 
 # --------------------------------------------------------------------
 # Build librealsense with python bindings enabled
 # --------------------------------------------------------------------
-WORKDIR /opt/librealsense
-RUN rm -rf build && mkdir -p build && cd build && \
-    cmake .. \
+RUN mkdir build && cd build
+RUN cmake \
       -DFORCE_RSUSB_BACKEND=ON \
       -DBUILD_PYTHON_BINDINGS=ON \
       -DBUILD_PYTHON=ON \
@@ -38,13 +41,10 @@ RUN rm -rf build && mkdir -p build && cd build && \
       -DBUILD_EXAMPLES=OFF \
       -DBUILD_GRAPHICAL_EXAMPLES=OFF \
       -DBUILD_TOOLS=OFF \
-      -DCMAKE_BUILD_TYPE=Release && \
-    cmake --build . -j"$(nproc)" && \
-    cmake --build . --target install -j"$(nproc)" && \
+      -DCMAKE_BUILD_TYPE=Release
+RUN cmake --build . -j"$(nproc)"
+RUN cmake --build . --target install -j"$(nproc)" && \
     ldconfig
-
-# udev rules (optional)
-RUN cp /opt/librealsense/config/99-realsense-libusb.rules /etc/udev/rules.d/ || true
 
 # --------------------------------------------------------------------
 # Locate and install the pyrealsense2 Python extension (.so)
@@ -69,16 +69,18 @@ RUN cp /opt/librealsense/config/99-realsense-libusb.rules /etc/udev/rules.d/ || 
 # a fragile path that would break whenever Python, Pi OS, arch,
 # or librealsense is updated.
 # --------------------------------------------------------------------
-RUN set -eux; \
-    SO_FILE="$(find /opt/librealsense/build -name 'pyrealsense2*.so' -print -quit)"; \
-    echo "Found pyrealsense2 SO: ${SO_FILE}"; \
-    test -n "${SO_FILE}"; \
-    PY_SITE="$(python -c 'import site; print(site.getsitepackages()[0])')"; \
-    echo "Python site-packages: ${PY_SITE}"; \
-    rm -rf "${PY_SITE}/pyrealsense2"; \
-    cp -r /opt/librealsense/wrappers/python/pyrealsense2 "${PY_SITE}/"; \
-    cp "${SO_FILE}" "${PY_SITE}/pyrealsense2/";
+RUN find . -name "pyrealsense2*.so" -exec cp {} /tmp/ \;
 
-# Default to python shell
-WORKDIR /root
+FROM builder
+WORKDIR /app
+
+COPY --from=builder \
+  /app/config/99-realsense-libusb.rules \
+  /etc/udev/rules.d/
+COPY --from=builder \
+  /app/wrappers/python/pyrealsense2 \
+  /usr/local/lib/python3.11/site-packages
+COPY --from=builder /tmp/pyrealsense2*.so \
+  /usr/local/lib/python3.11/site-packages/pyrealsense2/
+
 CMD ["python"]

@@ -80,19 +80,16 @@ If `/swapfile` shows up again, your swap is working and persistent.
 
 ---
 
-## Building locally on the Pi
+## Building
 
+### On an x64 machine
+You should have a builder configured to support QEMU:
 
-### Option 1: Direct `docker build`
+`docker buildx create --name arm-builder --platform "linux/amd64,linux/arm/v7" --use`
 
-From the repository root:
+Then from the repository root, run `docker -f src/docker-compose.yml build`
 
-```bash
-cd src
-docker build -f Dockerfile -t realsense-pyrealsense2-rpi-base:2.55.1 .
-```
-
-### Option 2: Using `docker compose` (for testing with hardware too)
+### Building natively on ARM
 
 From the repository root:
 

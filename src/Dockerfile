@@ -3,7 +3,6 @@
 
 FROM python:3.11-slim-trixie AS base
 
-ARG LIBREALSENSE_TAG=v2.55.1
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PIP_BREAK_SYSTEM_PACKAGES=1
 ENV PIP_EXTRA_INDEX_URL=https://www.piwheels.org/simple
@@ -21,6 +20,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 FROM base AS builder
 WORKDIR /app
+ARG LIBREALSENSE_TAG=v2.55.1
 
 RUN git clone https://github.com/IntelRealSense/librealsense.git . \
   --branch ${LIBREALSENSE_TAG} \

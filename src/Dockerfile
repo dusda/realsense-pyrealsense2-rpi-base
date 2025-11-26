@@ -72,7 +72,7 @@ RUN cmake --build . --target install -j"$(nproc)" && \
 RUN find . -name "pyrealsense2*.so" -exec cp {} /tmp/ \;
 
 FROM builder
-WORKDIR /app
+WORKDIR /root
 
 COPY --from=builder \
   /app/config/99-realsense-libusb.rules \

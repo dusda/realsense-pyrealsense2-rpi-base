@@ -1,7 +1,7 @@
 # RealSense Python base image for Raspberry Pi (ARM64)
 # Contains librealsense + pyrealsense2 installed into site-packages.
 
-FROM python:3.11-slim-trixie AS base
+FROM python:3.11-slim-bookworm AS base
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PIP_BREAK_SYSTEM_PACKAGES=1
